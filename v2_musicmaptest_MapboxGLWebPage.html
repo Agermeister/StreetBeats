@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>Music Map Beta v0.1</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v0.31.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.31.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='https://www.mapbox.com/base/latest/base.css' rel='stylesheet' />
+    <style>
+		
+	body {
+		margin:0; padding:0; 
+	}
+	
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width:100%;
+    }
+    
+    #locations {
+        position: absolute;
+    }
+	
+	.legend {
+    background-color: 	#242020;
+    border-radius: 3px;
+    bottom: 30px;
+    box-shadow: 0 1px 2px #f0f0ee;
+    font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+	color: #ffffff;
+    padding: 10px;
+    position: absolute;
+    right: 10px;
+    z-index: 1;
+}
+
+.legend h4 {
+    margin: 0 0 10px;
+}
+
+.legend div span { 			/*defines circle symbols*/
+    border-radius: 50%;
+    display: inline-block;
+    height: 10px;
+    margin-right: 5px;
+    width: 10px;
+}
+
+.mapboxgl-popup {
+    max-width: 400px;
+    font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+    </style>
+</head>
+
+<!-- add html elements to the legend !-->
+<div id='legend' class='legend'>
+    <h4><center>UK Top 40 Chart Appearences <br>(Singles and Albums)</br></center></h4>
+    <div><span style='background-color: #ffffcc'></span>10</div>
+    <div><span style='background-color: #ffeda0'></span>25</div>
+    <div><span style='background-color: #fed976'></span>50</div>
+    <div><span style='background-color: #feb24c'></span>100</div>
+    <div><span style='background-color: #fd8d3c'></span>150</div>
+    <div><span style='background-color: #fc4e2a'></span>200</div>
+	<div><span style='background-color: #e31a1c'></span>250</div>
+	<div><span style='background-color: #bd0026'></span>350</div>
+	<div><span style='background-color: #800026'></span>500</div>
+  </div>
+
+<body>
+    <div id='map'></div>
+    <div id='menu'> 	<!--creates toggle map layer !-->
+    <input id='basic' type='radio' name='rtoggle' value='basic' checked='checked'>
+    <label for='basic'>basic</label>
+    <input id='streets' type='radio' name='rtoggle' value='streets'>
+    <label for='streets'>streets</label>
+    <input id='bright' type='radio' name='rtoggle' value='bright'>
+    <label for='bright'>bright</label>
+    <input id='light' type='radio' name='rtoggle' value='light'>
+    <label for='light'>light</label>
+    <input id='dark' type='radio' name='rtoggle' value='dark'>
+    <label for='dark'>dark</label>
+    <input id='satellite' type='radio' name='rtoggle' value='satellite'>
+    <label for='satellite'>satellite</label>
+</div>
+    <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWdlcm1laXN0ZXIiLCJhIjoiZjJmY2VkNWU1MDc1Y2NjNGM3ZGI2MTk1OTAyMGE3YmYifQ.HTI5TRmAfbZBARLK_0MfLA'; //Put your Mapbox Public Access token here
+
+    //Load a new map in the 'map' HTML div
+    var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v9',
+            center: [-8.645, 48.909],
+            zoom: 3
+        });
+	
+	// Add zoom and rotation controls to the map.
+	map.addControl(new mapboxgl.NavigationControl({position: 'top-right'}));
+		
+	// Store an array of circle-color ramps for data-driven styles
+var colourList = [
+    [10, '#ffffcc'],
+    [25, '#ffeda0'],
+    [50, '#fed976'],
+    [100, '#feb24c'],
+    [150, '#fd8d3c'],
+    [200, '#fc4e2a'],
+	[250, '#e31a1c'],
+    [350, '#bd0026'],
+	[500, '#800026']
+];	
+		
+    //Load the vector tile source from the Mapbox Pedestrian traffic example
+    map.on('load', function () {
+         map.addLayer({
+            'id': 'music_artists',
+            'type': 'circle',
+            //Load the vector tile source from Music Map
+            'source': {
+                type: 'vector',
+                url: 'mapbox://agermeister.ciua6oq0n00062togix7c6dny-2ktwm' //Your Mapbox tileset Map ID
+            },
+            'source-layer': 'v2_MusicMap_102016_Phase2', //name of tileset
+            'paint' : {
+                //Add data-driven styles for circle-color
+				'circle-color': {
+					property: 'ChartAppearancesTop40',
+					type: 'interval',
+					stops: colourList
+				},
+                'circle-radius' : 4,
+                'circle-opacity' : 0.8
+              }
+        });
+    });
+	
+	// When a click event occurs near a place, open a popup at the location of
+// the feature, with HTML description from its properties
+map.on('click', function(e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['music_artists'] });
+
+    // if the features have no info, return nothing
+    if (!features.length) {
+        return;
+    }
+
+    var feature = features[0];
+
+    // Populate the popup and set its coordinates
+    // based on the feature found
+    var popup = new mapboxgl.Popup()
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML('<div id="popup" class="popup" style="z-index: 10;">' +
+            '<ul class="list-group">' +
+			'<li class="list-group-item"> Artist: ' + feature.properties['title'] + " </li>" + 
+            '<li class="list-group-item"> Top 40 Appearances: ' + feature.properties['ChartAppearancesTop40'] + " </li>" +
+            '<li class="list-group-item"> Genre: ' + feature.properties['Genre'] + " </li>" +
+			'<li class="list-group-item"> Sub Genre: ' + feature.properties['Sub Genre'] + " </li>" +
+            '<li class="list-group-item"> Description: ' + feature.properties['description'] + " </li>" + '</ul> </div>')
+        .addTo(map);
+});
+
+// Use the same approach as above to indicate that the symbols are clickable
+// by changing the cursor style to 'pointer'
+map.on('mousemove', function(e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['music_artists'] });
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''
+});
+
+//adds layer toggle to browser
+
+var layerList = document.getElementById('menu');
+var inputs = layerList.getElementsByTagName('input');
+
+function switchLayer(layer) {
+    var layerId = layer.target.id;
+    map.setStyle('mapbox://styles/mapbox/' + layerId + '-v9');
+}
+
+for (var i = 0; i < inputs.length; i++) {
+    inputs[i].onclick = switchLayer;
+}
+        
+</script>
+
+</body>
+
+</html>

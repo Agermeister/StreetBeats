@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Marker Leaflet Map</title>
+<meta charset="utf-8" />
+<link
+rel="stylesheet"
+href="http://leaflet.github.io/Leaflet.draw/docs/examples-0.7.x/libs/leaflet.css"
+/>
+<link
+rel="stylesheet"
+href="http://leaflet.github.io/Leaflet.draw/src/leaflet.draw.css" 
+/> 
+<script
+src="http://leaflet.github.io/Leaflet.draw/docs/examples-0.7.x/libs/leaflet-src.js">
+</script>
+<script
+src="http://leaflet.github.io/Leaflet.draw/src/Leaflet.draw.js"> //provides source for leaflet draw plugin script, on own website will need to place and point to web directory
+</script>
+<script
+src="http://leaflet.github.io/Leaflet.draw/src/Control.Draw.js"> //provides source for leaflet draw plugin script, on own website will need to place and point to web directory
+</script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/Leaflet.draw.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/Leaflet.Draw.Event.js"></script>
+    <link rel="stylesheet" href="http://leaflet.github.io/Leaflet.draw/src/leaflet.draw.css"/>
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/Toolbar.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/Tooltip.js"></script>
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/GeometryUtil.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/LatLngUtil.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/LineUtil.Intersect.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/Polygon.Intersect.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/Polyline.Intersect.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/ext/TouchEvents.js"></script>
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/DrawToolbar.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Feature.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.SimpleShape.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Polyline.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Circle.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Marker.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Polygon.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/draw/handler/Draw.Rectangle.js"></script>
+
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/EditToolbar.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/EditToolbar.Edit.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/EditToolbar.Delete.js"></script>
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/Control.Draw.js"></script>
+
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/Edit.Poly.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/Edit.SimpleShape.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/Edit.Circle.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/Edit.Rectangle.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.draw/src/edit/handler/Edit.Marker.js"></script>
+</head>
+<body>
+<div id="map" style="width: 800px; height: 600px"></div>
+
+<script>
+
+var osmLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>',
+	thunLink = '<a href="http://thunderforest.com/">Thunderforest</a>'; // fetches attributes for hyperlinks for tile sources
+	
+var osmUrl =' http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+	osmAttrib = '&copy; ' + osmLink + ' Contributors',
+	landUrl = 'http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
+	thunAttrib = '&copy; '+osmLink+' Contributors & '+thunLink;	// sources background maps
+
+var osmMap = L.tileLayer(osmUrl, {attribution: osmAttrib}),
+	landMap = L.tileLayer(landUrl, {attribution: thunAttrib}); // defines tile layer, combining tile source and attributes
+
+var map = L.map('map', {
+	layers: [osmMap] // only add one!
+	})
+	.setView([-41.2858, 174.78682], 14);
+
+
+var LeafIcon = L.Icon.extend({ //defines shadow of alternative marker to be used by drawing control plugin
+		options: {
+				shadowUrl:
+						'http://leafletjs.com/examples/custom-icons/leaf-shadow.png',
+				iconSize: [38, 95],	// size of the icon
+				shadowSize: [50, 64], // size of the shadow
+				iconAnchor: [22, 94], // point of the icon which will correspond to marker's location
+				shadowAnchor: [4, 62], // the same for the shadow
+				popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+		},
+	});
+var greenIcon = new LeafIcon({ //defines location of alternative icon
+		iconUrl: 'http://leafletjs.com/examples/custom-icons/leaf-green.png',
+		});
+
+var drawnItems = new L.FeatureGroup(); //creates variable and adds layer to contain drawn objects
+	map.addLayer(drawnItems);
+	
+var drawControl = new L.Control.Draw({ //creates variable and adds control for drawing tools
+		position: 'topleft',
+		draw: {		//assigns colour to vector type
+				polygon: {
+						shapeOptions: {
+								color: 'red'
+						},
+						allowIntersection: false,	// checks polygon for self intersection and displays warning if so
+						drawError: {
+								colour: 'red',
+								timeout: 1000
+						},
+						showArea: true,
+						metric: true,	// option to display area of polygon
+						repeatMode: true,	//option to continue drawing, until press esc
+				},
+				polyline: {
+						shapeOptions: {
+								color: 'purple'
+						},
+				},
+				rect: {
+						shapeOptions: {
+								color: 'green'
+						},
+				},
+				circle: {
+						shapeOptions: {
+								color: 'steelblue'
+						},
+				},
+				marker: {	//defines marker type, with overrided alternative marker icon (see LeafIcon variable)
+						icon: greenIcon
+				},
+			},
+	
+	edit: {
+		featureGroup: drawnItems //directs created features to 'drawnItems' variable to store features
+	}
+});
+map.addControl(drawControl);
+
+map.on('draw:created', function (e) { // trigger to capture what type of vector it is (polyline, polygon etc), there is a way to send features from here to database but another time...
+	var type = e.layerType,
+		layer = e.layer;
+	drawnItems.addLayer(layer);
+});	
+
+
+</script>
+<script>
+
+var coolPlaces = new L.LayerGroup(); //creates a new layer to contain marker and polyline attributes (string and coordinates)
+	L.marker([-41.29042, 174.78219])
+		.bindPopup('Te Papa').addTo(coolPlaces), //adds object to newly created layer
+	L.marker([-41.29437, 174.78405])
+		.bindPopup('Embassy Theatre').addTo(coolPlaces),
+	L.marker([-41.2895, 174.77803])
+		.bindPopup('Michael Fowler Centre').addTo(coolPlaces),
+	L.marker([-41.28313, 174.77736])
+		.bindPopup('Leuven Belgin Beer Cafe').addTo(coolPlaces),
+	L.polyline([
+		[-41.28313, 174.77736],
+		[-41.2895, 174.77803],
+		[-41.29042, 174.78219],
+		[-41.29437, 174.78405]
+		]
+		).addTo(coolPlaces);
+	
+var baseLayers = {
+	"OSM Mapnik": osmMap,
+	"Landscape": landMap //variables to call tile layers and labels for tile layers
+	};	
+
+var overlays = { 	//creates variable to call layer of geo-objects
+	"Interesting places": coolPlaces 
+	};
+
+L.control.layers(baseLayers,overlays).addTo(map); // control element that calls variable for tile base maps and vector layers
+</script>
+
+</body>
+</html>
